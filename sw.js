@@ -1,5 +1,5 @@
-const CACHE_NAME = 'ahmad-hegazy-reports-v1';
-const ASSETS = [
+const CACHE_NAME = 'report-creator-msai-v4';
+const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
@@ -9,7 +9,7 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
   self.skipWaiting();
 });
@@ -24,15 +24,16 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        if (event.request.method === 'GET' && response && response.status === 200) {
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => cached);
-    })
+      })
+      .catch(() => caches.match(event.request).then((res) => res || caches.match('./index.html')))
   );
 });
